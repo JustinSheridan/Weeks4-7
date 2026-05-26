@@ -1,22 +1,24 @@
-//WEEK FOUR STUFF:
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 
 public class Trainer : MonoBehaviour
 {
-    public SpriteRenderer creatureRenderer;
+    public SpriteRenderer creatureRenderer; // Kept for reference, but we will use the list
     public Camera gameCamera;
     public Color caughtColour;
+
+    public Hider creatureHider;
 
     public List<SpriteRenderer> uncaughtCreatures;
     public List<SpriteRenderer> caughtCreatures;
 
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        // Ensure lists are initialized to avoid null reference errors
+        if (uncaughtCreatures == null) uncaughtCreatures = new List<SpriteRenderer>();
+        if (caughtCreatures == null) caughtCreatures = new List<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -30,39 +32,51 @@ public class Trainer : MonoBehaviour
 
         if(isClicked)
         {
-            //caughtCreatures:
-            //for each element I want to output that to the console
-
-            //FIRST SECTION: Define and set the value of the iterator
-            //SECOND SECTION: Define how long the loop will run
-            //THIRD SECTION: Increase the value of i each time it loops
-
+            // Output caught creatures to console
             for(int i = 0; i < caughtCreatures.Count; i++)
             {
-                Debug.Log(caughtCreatures[i]);
+                if (caughtCreatures[i] != null)
+                    Debug.Log(caughtCreatures[i].gameObject.name + " is caught.");
             }
 
-
-            if(caughtCreatures.Count > 0)
+            // Check mouse position against all uncaught creatures
+            // We iterate backwards because we will remove items from the list
+            for (int i = uncaughtCreatures.Count - 1; i >= 0; i--)
             {
-                Debug.Log(caughtCreatures[0]);
+                SpriteRenderer currentCreature = uncaughtCreatures[i];
+
+                // Check if the creature is still valid (hasn't been destroyed in scene)
+                if (currentCreature == null)
+                {
+                    uncaughtCreatures.RemoveAt(i);
+                    continue;
+                }
+
+                if (currentCreature.bounds.Contains(worldMousePosition))
+                {
+                    // 1. Change color
+                    currentCreature.color = caughtColour;
+
+                    // 2. Use the Hider script
+                    if (creatureHider != null)
+                    {
+                        creatureHider.Hide();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Creature Hider reference is missing!");
+                    }
+
+                    // 3. Update lists
+                    caughtCreatures.Add(currentCreature);
+                    uncaughtCreatures.RemoveAt(i); // Remove from uncaught since we just processed it
+
+                    Debug.Log("Caught the creature!");
+                    
+                    // Break to only catch one at a time (remove break to catch multiple at once)
+                    break; 
+                }
             }
-            
-        }
-
-
-        if(isClicked && creatureRenderer.bounds.Contains(worldMousePosition))
-        {
-            creatureRenderer.color = caughtColour;
-
-            bool isCreatureCaught = caughtCreatures.Contains(creatureRenderer);
-            //Debug.Log("Is creature caught["+isCreatureCaught.ToString()+"]");
-            if(!isCreatureCaught)
-            {
-                caughtCreatures.Add(creatureRenderer);
-            }
-            
-            uncaughtCreatures.Remove(creatureRenderer);
         }
     }
 }
